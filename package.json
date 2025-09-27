@@ -1,0 +1,34 @@
+{
+  "name": "log-tracker",
+  "version": "1.0.0",
+  "description": "SDK for the Log Analyzer SvelteKit application",
+  "main": "dist/index.js",
+  "module": "src/index.js",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist/",
+    "src/",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "sdk",
+    "log-tracker"
+  ],
+  "author": "Dalton Lee Blake",
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "rollup": "^4.0.0"
+  }
+}
