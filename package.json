@@ -1,9 +1,10 @@
 {
-  "name": "log-tracker",
+  "name": "logtracker.js",
   "version": "1.0.0",
   "description": "SDK for the Log Analyzer SvelteKit application",
-  "main": "dist/index.js",
-  "module": "src/index.js",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
   "type": "module",
   "exports": {
     ".": {
@@ -29,6 +30,9 @@
   "license": "MIT",
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^15.2.3",
-    "rollup": "^4.0.0"
+    "@rollup/plugin-typescript": "^12.1.4",
+    "rollup": "^4.0.0",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.3"
   }
 }
