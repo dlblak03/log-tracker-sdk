@@ -30,8 +30,11 @@ Track when a user starts a session in your application:
 const sessionId = await client.trackSession(
   'pre-authentication',  // Session type
   'user@example.com',    // User identifier
-  'link-123',            // Optional: Link ID
-  { device: 'mobile' }   // Optional: Metadata object
+  {
+    linkId: 'link-123',        // Optional: Link ID
+    metadata: { device: 'mobile' },  // Optional: Metadata object
+    timeout: 30                // Optional: Session timeout in minutes (default: 30)
+  }
 );
 
 console.log('Session started:', sessionId);
@@ -41,6 +44,8 @@ console.log('Session started:', sessionId);
 - `'pre-authentication'` - Before user logs in
 - `'authenticated'` - After user logs in
 - `'refresh-authentication'` - When refreshing auth tokens
+
+**Note:** Sessions automatically expire after the specified timeout period. Call `untrackSession()` to end a session early.
 
 ### Ending a Session
 
@@ -65,15 +70,17 @@ Creates a new LogTracker client instance.
 
 ---
 
-### `trackSession(type, user, linkId?, metadata?)`
+### `trackSession(type, user, optional?)`
 
 Starts tracking a new user session.
 
 **Parameters:**
 - `type` (Session) - Type of session: `'pre-authentication'`, `'authenticated'`, or `'refresh-authentication'`
 - `user` (string) - User identifier (email, username, or user ID)
-- `linkId` (string | null, optional) - Optional link or referral ID
-- `metadata` (object | null, optional) - Optional metadata object with additional session information
+- `optional` (object, optional) - Optional configuration object:
+  - `linkId` (string | null) - Optional link or referral ID
+  - `metadata` (object | null) - Optional metadata object with additional session information
+  - `timeout` (number) - Session timeout in minutes (default: 30)
 
 **Returns:** `Promise<string>` - The session ID
 
@@ -82,11 +89,14 @@ Starts tracking a new user session.
 const sessionId = await client.trackSession(
   'authenticated',
   'john.doe@example.com',
-  null,
   {
-    browser: 'Chrome',
-    version: '120.0.0',
-    platform: 'MacOS'
+    linkId: 'ref-123',
+    metadata: {
+      browser: 'Chrome',
+      version: '120.0.0',
+      platform: 'MacOS'
+    },
+    timeout: 60  // Session expires in 60 minutes
   }
 );
 ```
@@ -146,19 +156,21 @@ const client = createLogTrackerClient({
 
 async function trackUserSession(userId) {
   try {
-    // Start session
+    // Start session with 45-minute timeout
     const sessionId = await client.trackSession(
       'authenticated',
       userId,
-      null,
-      { source: 'web-app' }
+      {
+        metadata: { source: 'web-app' },
+        timeout: 45
+      }
     );
 
     console.log('Session started:', sessionId);
 
     // ... your application logic ...
 
-    // End session when user logs out
+    // End session when user logs out (or wait for automatic timeout)
     await client.untrackSession(sessionId);
     console.log('Session ended');
 

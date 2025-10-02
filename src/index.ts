@@ -17,6 +17,7 @@ interface SessionStartRequest {
     linkId?: string | null;
     metadata?: JsonObject | null;
     timestamp: string;
+    endAt: string;
 }
 
 interface SessionStartResponse {
@@ -25,6 +26,12 @@ interface SessionStartResponse {
 
 interface ErrorResponse {
     error: string;
+}
+
+interface TrackSessionOptional {
+    linkId?: string | null;
+    metadata?: JsonObject | null;
+    timeout?: number;
 }
 
 class LogTrackerError extends Error {
@@ -67,13 +74,20 @@ class LogTrackerServerClient {
         return data as T;
     }
 
-    async trackSession(type: Session, user: string, linkId: string | null = null, metadata: JsonObject | null = null): Promise<string> {
+    async trackSession(type: Session, user: string, optional: TrackSessionOptional = {}): Promise<string> {
+        const {
+            linkId = null,
+            metadata = null,
+            timeout = 30
+        } = optional;
+
         const requestBody: SessionStartRequest = {
             type,
             user,
             linkId,
             metadata,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            endAt: new Date(new Date().getTime() + timeout * 60 * 1000).toISOString()
         };
 
         const response = await fetch(`${this.url}/track/sessions`, {
