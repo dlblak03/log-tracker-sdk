@@ -29,8 +29,8 @@ interface ErrorResponse {
 }
 
 interface TrackSessionOptional {
-    linkId?: string | null;
-    metadata?: JsonObject | null;
+    linkId?: string;
+    metadata?: JsonObject;
     timeout?: number;
 }
 
