@@ -5,7 +5,27 @@ export interface LogTrackerConfig {
 }
 
 type Session = 'pre-authentication' | 'authenticated' | 'refresh-authentication';
-type Event = 'page_view' | 'click' | 'error';
+type FrontendEvent =
+    // Core interactions
+    | 'page_view'
+    | 'click'
+    | 'form_submit'
+
+    // Errors
+    | 'error';
+type BackendEvent =
+    // API
+    | 'api_call'
+    | 'api_error'
+
+    // Auth
+    | 'auth_attempt'
+    | 'auth_success'
+    | 'auth_failure'
+
+    // Errors
+    | 'error'
+    | 'validation_error';
 
 interface JsonObject {
     [key: string]: any;
@@ -32,6 +52,30 @@ interface TrackSessionOptional {
     linkId?: string;
     metadata?: JsonObject;
     timeout?: number;
+}
+
+interface TrackBackendOptional {
+    linkId?: string;
+    metadata?: JsonObject;
+}
+
+interface TrackBackendEventObject {
+    sessionId: string;
+    source: 'Backend';
+    type: BackendEvent;
+    linkId: string | null;
+    metadata: JsonObject | null;
+    startTime: number;
+}
+
+interface BackendEventRequest {
+    sessionId: string;
+    source: 'Backend';
+    type: BackendEvent;
+    linkId: string | null;
+    metadata: JsonObject | null;
+    duration: number;
+    timestamp: string;
 }
 
 class LogTrackerError extends Error {
@@ -90,7 +134,7 @@ class LogTrackerServerClient {
             endAt: new Date(new Date().getTime() + timeout * 60 * 1000).toISOString()
         };
 
-        const response = await fetch(`${this.url}/track/sessions`, {
+        const response = await fetch(`${this.url}/api/track/sessions`, {
             method: 'POST',
             headers: this.getHeaders(),
             body: JSON.stringify(requestBody)
@@ -101,10 +145,48 @@ class LogTrackerServerClient {
     }
 
     async untrackSession(id: string): Promise<void> {
-        const response = await fetch(`${this.url}/track/sessions/${id}/end`, {
+        const response = await fetch(`${this.url}/api/track/sessions/${id}/end`, {
             method: 'POST',
             headers: this.getHeaders(),
             body: JSON.stringify({ timestamp: new Date().toISOString() })
+        });
+
+        await this.handleResponse<void>(response);
+    }
+
+    trackBackendEvent(type: BackendEvent, sessionId: string, optional: TrackBackendOptional = {}): TrackBackendEventObject {
+        const {
+            linkId = null,
+            metadata = null
+        } = optional;
+
+        return {
+            sessionId,
+            source: 'Backend',
+            type,
+            linkId,
+            metadata,
+            startTime: performance.now()
+        };
+    }
+
+    async untrackBackendEvent(eventObject: TrackBackendEventObject): Promise<void> {
+        const duration = performance.now() - eventObject.startTime;
+
+        const requestBody: BackendEventRequest = {
+            sessionId: eventObject.sessionId,
+            source: eventObject.source,
+            type: eventObject.type,
+            linkId: eventObject.linkId,
+            metadata: eventObject.metadata,
+            duration,
+            timestamp: new Date().toISOString()
+        };
+
+        const response = await fetch(`${this.url}/api/track/events/backend`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify(requestBody)
         });
 
         await this.handleResponse<void>(response);
