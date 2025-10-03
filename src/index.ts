@@ -2,6 +2,8 @@ export interface LogTrackerConfig {
     url: string;
     application_id: string;
     public_key: string;
+    setSessionCookie: (name: string, value: string) => void;
+    getSessionCookie: (name: string) => string;
 }
 
 type Session = 'pre-authentication' | 'authenticated' | 'refresh-authentication';
@@ -89,11 +91,15 @@ class LogTrackerServerClient {
     private url: string;
     private application_id: string;
     private public_key: string;
+    private setSessionCookie: (name: string, value: string) => void;
+    private getSessionCookie: (name: string) => string;
 
     constructor(config: LogTrackerConfig) {
         this.url = config.url;
         this.application_id = config.application_id;
         this.public_key = config.public_key;
+        this.setSessionCookie = config.setSessionCookie;
+        this.getSessionCookie = config.getSessionCookie;
     }
 
     private getHeaders(): HeadersInit {
@@ -141,11 +147,12 @@ class LogTrackerServerClient {
         });
 
         const result = await this.handleResponse<SessionStartResponse>(response);
+        this.setSessionCookie('log-tracker-session', result.session_id)
         return result.session_id;
     }
 
-    async untrackSession(id: string): Promise<void> {
-        const response = await fetch(`${this.url}/api/track/sessions/${id}/end`, {
+    async untrackSession(): Promise<void> {
+        const response = await fetch(`${this.url}/api/track/sessions/${this.getSessionCookie('log-tracker-session')}/end`, {
             method: 'POST',
             headers: this.getHeaders(),
             body: JSON.stringify({ timestamp: new Date().toISOString() })
