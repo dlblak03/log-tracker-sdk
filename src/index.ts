@@ -2,8 +2,6 @@ export interface LogTrackerConfig {
     url: string;
     application_id: string;
     public_key: string;
-    setSessionCookie: (name: string, value: string) => void;
-    getSessionCookie: (name: string) => string;
 }
 
 type Session = 'pre-authentication' | 'authenticated' | 'refresh-authentication';
@@ -18,16 +16,18 @@ type FrontendEvent =
 type BackendEvent =
     // API
     | 'api_call'
-    | 'api_error'
 
     // Auth
     | 'auth_attempt'
-    | 'auth_success'
-    | 'auth_failure'
-
+type BackendErrorEvent =
     // Errors
+    | 'auth_failure'
+    | 'api_error'
     | 'error'
     | 'validation_error';
+type BackendSuccessEvent =
+    // Success
+    | 'auth_success'
 
 interface JsonObject {
     [key: string]: any;
@@ -44,6 +44,10 @@ interface SessionStartRequest {
 
 interface SessionStartResponse {
     session_id: string;
+}
+
+interface EventStartResponse {
+    event_id: string;
 }
 
 interface ErrorResponse {
@@ -64,7 +68,7 @@ interface TrackBackendOptional {
 interface TrackBackendEventObject {
     sessionId: string;
     source: 'Backend';
-    type: BackendEvent;
+    type: BackendEvent | BackendErrorEvent | BackendSuccessEvent;
     linkId: string | null;
     metadata: JsonObject | null;
     startTime: number;
@@ -73,7 +77,7 @@ interface TrackBackendEventObject {
 interface BackendEventRequest {
     sessionId: string;
     source: 'Backend';
-    type: BackendEvent;
+    type: BackendEvent | BackendErrorEvent | BackendSuccessEvent;
     linkId: string | null;
     metadata: JsonObject | null;
     duration: number;
@@ -91,15 +95,11 @@ class LogTrackerServerClient {
     private url: string;
     private application_id: string;
     private public_key: string;
-    private setSessionCookie: (name: string, value: string) => void;
-    private getSessionCookie: (name: string) => string;
 
     constructor(config: LogTrackerConfig) {
         this.url = config.url;
         this.application_id = config.application_id;
         this.public_key = config.public_key;
-        this.setSessionCookie = config.setSessionCookie;
-        this.getSessionCookie = config.getSessionCookie;
     }
 
     private getHeaders(): HeadersInit {
@@ -147,12 +147,11 @@ class LogTrackerServerClient {
         });
 
         const result = await this.handleResponse<SessionStartResponse>(response);
-        this.setSessionCookie('log-tracker-session', result.session_id)
         return result.session_id;
     }
 
-    async untrackSession(): Promise<void> {
-        const response = await fetch(`${this.url}/api/track/sessions/${this.getSessionCookie('log-tracker-session')}/end`, {
+    async untrackSession(sessionId: string): Promise<void> {
+        const response = await fetch(`${this.url}/api/track/sessions/${sessionId}/end`, {
             method: 'POST',
             headers: this.getHeaders(),
             body: JSON.stringify({ timestamp: new Date().toISOString() })
@@ -177,7 +176,7 @@ class LogTrackerServerClient {
         };
     }
 
-    async untrackBackendEvent(eventObject: TrackBackendEventObject): Promise<void> {
+    async untrackBackendEvent(eventObject: TrackBackendEventObject): Promise<string> {
         const duration = performance.now() - eventObject.startTime;
 
         const requestBody: BackendEventRequest = {
@@ -196,11 +195,64 @@ class LogTrackerServerClient {
             body: JSON.stringify(requestBody)
         });
 
-        await this.handleResponse<void>(response);
+        const result = await this.handleResponse<EventStartResponse>(response);
+        return result.event_id;
+    }
+
+    async trackBackendErrorEvent(type: BackendErrorEvent, sessionId: string, optional: TrackBackendOptional = {}): Promise<string> {
+        const {
+            linkId = null,
+            metadata = null
+        } = optional;
+        
+        const requestBody: BackendEventRequest = {
+            sessionId: sessionId,
+            source: 'Backend',
+            type: type,
+            linkId: linkId,
+            metadata: metadata,
+            duration: 0,
+            timestamp: new Date().toISOString()
+        };
+
+        const response = await fetch(`${this.url}/api/track/events/backend`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify(requestBody)
+        });
+
+        const result = await this.handleResponse<EventStartResponse>(response);
+        return result.event_id;
+    }
+
+    async trackBackendSuccessEvent(type: BackendSuccessEvent, sessionId: string, optional: TrackBackendOptional = {}): Promise<string> {
+        const {
+            linkId = null,
+            metadata = null
+        } = optional;
+        
+        const requestBody: BackendEventRequest = {
+            sessionId: sessionId,
+            source: 'Backend',
+            type: type,
+            linkId: linkId,
+            metadata: metadata,
+            duration: 0,
+            timestamp: new Date().toISOString()
+        };
+
+        const response = await fetch(`${this.url}/api/track/events/backend`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify(requestBody)
+        });
+
+        const result = await this.handleResponse<EventStartResponse>(response);
+        return result.event_id;
     }
 }
 
-export const createLogTrackerClient = (config: LogTrackerConfig) => {
+export const createLogTrackerServerClient = (config: LogTrackerConfig) => {
     return new LogTrackerServerClient(config);
 }
 
