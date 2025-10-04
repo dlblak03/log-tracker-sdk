@@ -27,6 +27,7 @@ type BackendErrorEvent =
     | 'validation_error';
 type BackendSuccessEvent =
     // Success
+    | 'api_success'
     | 'auth_success'
 
 interface JsonObject {
@@ -211,7 +212,7 @@ class LogTrackerServerClient {
             type: type,
             linkId: linkId,
             metadata: metadata,
-            duration: 0,
+            duration: 1,
             timestamp: new Date().toISOString()
         };
 
@@ -237,7 +238,7 @@ class LogTrackerServerClient {
             type: type,
             linkId: linkId,
             metadata: metadata,
-            duration: 0,
+            duration: 1,
             timestamp: new Date().toISOString()
         };
 
