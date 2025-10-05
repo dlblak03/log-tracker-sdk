@@ -28,7 +28,7 @@ Track when a user starts a session in your application:
 
 ```javascript
 const sessionId = await client.trackSession(
-  'pre-authentication',  // Session type
+  'pre_authentication',  // Session type
   'user@example.com',    // User identifier
   {
     linkId: 'link-123',        // Optional: Link ID
@@ -41,9 +41,9 @@ console.log('Session started:', sessionId);
 ```
 
 **Session Types:**
-- `'pre-authentication'` - Before user logs in
+- `'pre_authentication'` - Before user logs in
 - `'authenticated'` - After user logs in
-- `'refresh-authentication'` - When refreshing auth tokens
+- `'refresh_authentication'` - When refreshing auth tokens
 
 **Note:** Sessions automatically expire after the specified timeout period. Call `untrackSession()` to end a session early.
 
@@ -75,7 +75,7 @@ Creates a new LogTracker client instance.
 Starts tracking a new user session.
 
 **Parameters:**
-- `type` (Session) - Type of session: `'pre-authentication'`, `'authenticated'`, or `'refresh-authentication'`
+- `type` (Session) - Type of session: `'pre_authentication'`, `'authenticated'`, or `'refresh_authentication'`
 - `user` (string) - User identifier (email, username, or user ID)
 - `optional` (object, optional) - Optional configuration object:
   - `linkId` (string | null) - Optional link or referral ID

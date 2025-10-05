@@ -4,7 +4,7 @@ export interface LogTrackerConfig {
     public_key: string;
 }
 
-type Session = 'pre-authentication' | 'authenticated' | 'refresh-authentication';
+type Session = 'pre_authentication' | 'authenticated' | 'refresh_authentication';
 type FrontendEvent =
     // Core interactions
     | 'page_view'
@@ -13,22 +13,23 @@ type FrontendEvent =
 
     // Errors
     | 'error';
+    
 type BackendEvent =
-    // API
     | 'api_call'
-
-    // Auth
     | 'auth_attempt'
-type BackendErrorEvent =
-    // Errors
-    | 'auth_failure'
-    | 'api_error'
-    | 'error'
-    | 'validation_error';
+    | 'db_query'
+    | 'external_api_call';
+
 type BackendSuccessEvent =
-    // Success
     | 'api_success'
     | 'auth_success'
+    | 'db_query_success';
+
+type BackendErrorEvent =
+    | 'api_error'
+    | 'auth_failure'
+    | 'validation_error'
+    | 'error';
 
 interface JsonObject {
     [key: string]: any;
