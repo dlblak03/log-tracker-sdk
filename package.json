@@ -1,5 +1,5 @@
 {
-  "name": "logtracker.js",
+  "name": "logstream",
   "version": "1.0.0",
   "description": "SDK for the Log Analyzer SvelteKit application",
   "main": "dist/index.cjs",
